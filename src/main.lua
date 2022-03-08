@@ -10,11 +10,11 @@ local deltaTime = 0
 
 local playerMovement = {}
 local playerPosition = screenCenter
+local playerSpin = 0
 
 function drawShip(x, y, size)
 	local halfSize = size / 2
-	gfx.setColor(gfx.kColorBlack)
-	gfx.fillPolygon(
+	ship = playdate.geometry.polygon.new(
 		x,
 		y - halfSize,
 		x - halfSize,
@@ -22,8 +22,13 @@ function drawShip(x, y, size)
 		x,
 		y + halfSize / 2,
 		x + halfSize,
-		y + halfSize
-	)
+		y + halfSize,
+		x,
+		y - halfSize
+	) * playdate.geometry.affineTransform.new():rotatedBy(inputs.crank, x, y)
+	gfx.setLineWidth(2)
+	gfx.setColor(gfx.kColorBlack)
+	gfx.fillPolygon(ship)
 end
 
 function updateInputs()
@@ -31,6 +36,7 @@ function updateInputs()
 	inputs.down = playdate.buttonIsPressed(playdate.kButtonDown)
 	inputs.left = playdate.buttonIsPressed(playdate.kButtonLeft)
 	inputs.right = playdate.buttonIsPressed(playdate.kButtonRight)
+	inputs.crank = playdate.getCrankPosition()
 end
 
 function moveShip()
@@ -55,6 +61,10 @@ function moveShip()
 	
 	playerPosition.y += movement.y
 	playerPosition.x += movement.x
+end
+
+function spinShip()
+	
 end
 
 function playdate.update(arg, ...)
