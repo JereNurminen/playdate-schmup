@@ -1,20 +1,39 @@
+import("CoreLibs/object")
+import("CoreLibs/timer")
+
+-- Redefine math functions to use deg instead of rad
+-- (https://www.lua.org/pil/18.html)
+--[[
+local sin, cos = math.sin, math.cos
+local deg, rad = math.deg, math.rad
+math.sin = function (x) return sin(rad(x)) end
+math.cos = function (x) return deg(cos(x)) end
+]]
+
 local gfx <const> = playdate.graphics
-local screenCenter <const> = {}
-screenCenter.x = 200
-screenCenter.y = 120
-local playerSpeed <const> = 50
+local screenCenter <const> = playdate.geometry.vector2D.new(200, 120)
 local inputs = {}
 
 local lastFrameTime = 0
 local deltaTime = 0
 
+local playerSpeed <const> = 50
 local playerMovement = {}
 local playerPosition = screenCenter
 local playerSpin = 0
+local playerNosePos = screenCenter
+local playerShootCooldown = 500
+
+local bullets = {}
+local playerBulletSpeed <const> = 55
+
+function vectorFromAngle(angle)
+	return playdate.geometry.vector2D.new(math.cos(angle), math.sin(angle)):normalized()
+end
 
 function drawShip(x, y, size)
 	local halfSize = size / 2
-	ship = playdate.geometry.polygon.new(
+	local ship = playdate.geometry.polygon.new(
 		x,
 		y - halfSize,
 		x - halfSize,
@@ -25,7 +44,10 @@ function drawShip(x, y, size)
 		y + halfSize,
 		x,
 		y - halfSize
-	) * playdate.geometry.affineTransform.new():rotatedBy(inputs.crank, x, y)
+	) * playdate.geometry.affineTransform.new():rotatedBy(playerSpin, x, y)
+	
+	playerNosePos = playdate.geometry.vector2D.new(ship:getPointAt(1):unpack())
+	
 	gfx.setLineWidth(2)
 	gfx.setColor(gfx.kColorBlack)
 	gfx.fillPolygon(ship)
@@ -57,21 +79,51 @@ function moveShip()
 		x = 0 
 	end	
 	
-	movement = playdate.geometry.vector2D.new(x, y):normalized():scaledBy(deltaTime / 1000 * playerSpeed)
+	playerSpin = inputs.crank
+	
+	movement = playdate.geometry.vector2D.new(x, y)
+		:normalized()
+		:scaledBy(deltaTime / 1000 * playerSpeed)
 	
 	playerPosition.y += movement.y
 	playerPosition.x += movement.x
 end
 
-function spinShip()
-	
+function shoot()
+	table.insert(
+		bullets,
+		{
+			pos = playdate.geometry.vector2D.new(playerNosePos.x, playerNosePos.y),
+			direction = playerNosePos - playerPosition
+		}
+	)
+	playdate.timer.performAfterDelay(playerShootCooldown, shoot)
+end
+
+function moveBullets()
+	for i, bullet in ipairs(bullets) do
+		local moveVector = bullet.direction:normalized():scaledBy((deltaTime / 1000) * playerBulletSpeed)
+		bullets[i].pos += moveVector 
+	end
+end
+
+function drawBullets()
+	for i, bullet in ipairs(bullets) do
+		gfx.setColor(gfx.kColorBlack)
+		gfx.drawPixel(bullet.pos.x, bullet.pos.y)
+	end
 end
 
 function playdate.update(arg, ...)
 	deltaTime = playdate.getCurrentTimeMilliseconds() - lastFrameTime
+	playdate.timer.updateTimers()
 	updateInputs()
 	moveShip()
 	gfx.clear()
 	drawShip(playerPosition.x, playerPosition.y, 20)
+	moveBullets()
+	drawBullets()
 	lastFrameTime = playdate.getCurrentTimeMilliseconds()
 end
+
+shoot()
