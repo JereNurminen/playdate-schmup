@@ -2,7 +2,12 @@ import("CoreLibs/object")
 import("CoreLibs/timer")
 import("CoreLibs/ui")
 
-local gfx <const> = playdate.graphics
+import("enemy")
+
+-- GLOBALS
+deltaTime = 0
+gfx = playdate.graphics
+
 local screenSize <const> = playdate.geometry.vector2D.new(400, 240)
 local screenCenter <const> = screenSize / 2
 local inputs = {}
@@ -11,7 +16,6 @@ local gameHasStarted = false
 local gameActive = false
 
 local lastFrameTime = 0
-local deltaTime = 0
 
 local ship
 local playerSpeed <const> = 50
@@ -38,6 +42,8 @@ local enemySpawnMargin = 10
 local enemyRotationSpeed = 90
 
 local delayAfterGameOver = 2000
+
+local entities = {}
 
 function vectorFromAngle(angle)
 	return playdate.geometry.vector2D.new(math.cos(angle), math.sin(angle)):normalized()
@@ -69,14 +75,10 @@ end
 
 function spawnEnemy()
 	local pos  = randomScreenEdgePoint()
+	print("new enemy at ", pos.x, pos.y)
 	table.insert(
-		enemies,
-		{
-			pos = pos,
-			direction = (playerPosition - pos):normalized(),
-			rect = playdate.geometry.rect.new(pos.x - enemySize / 2, pos.y / 2, enemySize, enemySize),
-			speed = enemyBaseMoveSpeed
-		}
+		entities,
+		Enemy(pos, (playerPosition - pos):normalized())
 	)
 	playdate.timer.performAfterDelay(enemySpawnCooldown, spawnEnemy)
 end
@@ -247,15 +249,19 @@ end
 function playdate.update(arg, ...)
 	playdate.timer.updateTimers()
 	if gameActive then
+		gfx.clear()
 		deltaTime = playdate.getCurrentTimeMilliseconds() - lastFrameTime
 		updateInputs()
+		for i, e in ipairs(entities) do
+			e:onUpdate()
+			e:draw()
+		end
 		moveShip()
-		gfx.clear()
 		drawShip(playerPosition.x, playerPosition.y, 20)
 		moveBullets()
 		drawBullets()
-		drawEnemies()
-		moveEnemies()
+		-- drawEnemies()
+		-- moveEnemies()
 		lastFrameTime = playdate.getCurrentTimeMilliseconds()
 	end
 end
