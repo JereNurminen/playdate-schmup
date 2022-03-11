@@ -3,6 +3,7 @@ import("CoreLibs/timer")
 import("CoreLibs/ui")
 
 import("enemy")
+import("bullet")
 
 -- GLOBALS
 deltaTime = 0
@@ -187,11 +188,13 @@ end
 
 function shoot()
 	table.insert(
-		bullets,
-		{
-			pos = playdate.geometry.vector2D.new(playerNosePos.x, playerNosePos.y),
-			direction = playerNosePos - playerPosition
-		}
+		entities,
+		Bullet(
+			playdate.geometry.vector2D.new(playerNosePos.x, playerNosePos.y),
+			(playerNosePos - playerPosition):normalized(),
+			playerBulletSpeed,
+			playerBulletWidth
+		)
 	)
 	local cooldown = playerIsMoving and playerShootCooldownWhenMoving or playerShootCooldown
 	playdate.timer.performAfterDelay(cooldown, shoot)
@@ -258,8 +261,8 @@ function playdate.update(arg, ...)
 		end
 		moveShip()
 		drawShip(playerPosition.x, playerPosition.y, 20)
-		moveBullets()
-		drawBullets()
+		-- moveBullets()
+		-- drawBullets()
 		-- drawEnemies()
 		-- moveEnemies()
 		lastFrameTime = playdate.getCurrentTimeMilliseconds()

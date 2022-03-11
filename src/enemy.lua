@@ -26,7 +26,6 @@ function Enemy:move()
 end
 
 function Enemy:draw()
-	printTable(self.rect)
 	gfx.setColor(gfx.kColorWhite)
 	gfx.fillRect(self.rect)
 	gfx.setColor(gfx.kColorBlack)
