@@ -1,5 +1,3 @@
-import("CoreLibs/object")
-
 -- CONSTANTS
 local enemyBaseMoveSpeed = 40
 local enemyAcceleration = 5
@@ -9,21 +7,11 @@ local enemyHitShrink = 4
 local enemyMinSize = 7
 -- /CONSTANTS
 
-class("Enemy").extends()
+class("Enemy").extends(MovingEntity)
 
-function Enemy:init(pos, dir)
-	Enemy.super.init(self)
-	self.pos = pos
-	self.dir = dir
-	self.rect = playdate.geometry.rect.new(pos.x - enemySize / 2, pos.y - enemySize / 2, enemySize, enemySize)
-	self.speed = enemyBaseMoveSpeed
-	self.active = true
-end
-
-function Enemy:move()
-	self.pos = self.pos + self.dir:scaledBy((deltaTime / 1000) * self.speed)
-	self.rect.x = self.pos.x
-	self.rect.y = self.pos.y
+function Enemy:init(pos, dir, speed, size)
+	Enemy.super.init(self, pos, dir, speed, size)
+	self.spawnPos = pos
 end
 
 function Enemy:draw()
@@ -34,21 +22,12 @@ function Enemy:draw()
 	gfx.drawRect(self.rect)
 end
 
-function Enemy:kill()
-	self.active = false
-end
-
 function Enemy:onHit()
 	self:kill()
 end
 
-function Enemy:checkOutOfBounds()
-	if self.pos.x < -unspawnMargin
-	or self.pos.x > screenSize.x + unspawnMargin 
-	or self.pos.y < -unspawnMargin
-	or self.pos.y > screenSize.y + unspawnMargin then
-		self:kill()
-	end
+function Enemy:onOutOfBounds()
+	self.pos = self.spawnPos
 end
 
 function Enemy:onUpdate()

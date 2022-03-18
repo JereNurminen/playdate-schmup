@@ -1,19 +1,7 @@
-import("CoreLibs/object")
-
-class("Bullet").extends()
+class("Bullet").extends(MovingEntity)
 
 function Bullet:init(pos, dir, speed, size)
-	Bullet.super.init(self)
-	self.pos = pos
-	self.dir = dir
-	self.rect = playdate.geometry.rect.new(pos.x - size / 2, pos.y - size / 2, size, size)
-	self.speed = speed
-	self.size = size
-	self.active = true
-end
-
-function Bullet:move()
-	self.pos = self.pos + self.dir:scaledBy((deltaTime / 1000) * self.speed)
+	Bullet.super.init(self, pos, dir, speed, size)
 end
 
 function Bullet:draw()
@@ -32,17 +20,8 @@ function Bullet:checkCollisions()
 	end
 end
 
-function Bullet:kill()
-	self.active = false
-end
-
-function Bullet:checkOutOfBounds()
-	if self.pos.x < -unspawnMargin
-	or self.pos.x > screenSize.x + unspawnMargin 
-	or self.pos.y < -unspawnMargin
-	or self.pos.y > screenSize.y + unspawnMargin then
-		self:kill()
-	end
+function Bullet:onOutOfBounds()
+	self:kill()
 end
 
 function Bullet:onUpdate()

@@ -2,6 +2,7 @@ import("CoreLibs/object")
 import("CoreLibs/timer")
 import("CoreLibs/ui")
 
+import("moving-entity")
 import("enemy")
 import("bullet")
 
@@ -32,10 +33,10 @@ local bullets = {}
 local playerBulletSpeed <const> = 150
 local playerBulletWidth <const> = 3
 
-local enemySpawnCooldown = 3000
-local enemyBaseMoveSpeed = 10
+local enemySpawnCooldown = 1500
+local enemyBaseMoveSpeed = 40
 local enemyAcceleration = 5
-local enemySize = 8
+local enemySize = 16
 local enemyGrowSpeed = 2
 local enemyHitShrink = 4
 local enemyMinSize = 7
@@ -83,7 +84,7 @@ function spawnEnemy()
 	local pos  = randomScreenEdgePoint()
 	table.insert(
 		entities.enemies,
-		Enemy(pos, (playerPosition - pos):normalized())
+		Enemy(pos, (playerPosition - pos):normalized(), enemyBaseMoveSpeed, enemySize)
 	)
 	playdate.timer.performAfterDelay(enemySpawnCooldown, spawnEnemy)
 end
@@ -210,11 +211,11 @@ function playdate.update(arg, ...)
 		-- update and draw entities
 		for groupName, group in pairs(entities) do
 			for i, entity in ipairs(group) do
-				entity:onUpdate()
-				entity:draw()
 				if not entity.active then
 					table.remove(group, i)
 				end
+				entity:onUpdate()
+				entity:draw()
 			end
 		end
 		moveShip()
