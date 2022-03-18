@@ -9,8 +9,9 @@ import("bullet")
 deltaTime = 0
 gfx = playdate.graphics
 
-local screenSize <const> = playdate.geometry.vector2D.new(400, 240)
+screenSize = playdate.geometry.vector2D.new(400, 240)
 local screenCenter <const> = screenSize / 2
+unspawnMargin = 20
 local inputs = {}
 
 local gameHasStarted = false
@@ -31,7 +32,6 @@ local bullets = {}
 local playerBulletSpeed <const> = 150
 local playerBulletWidth <const> = 3
 
-local enemies = {}
 local enemySpawnCooldown = 3000
 local enemyBaseMoveSpeed = 10
 local enemyAcceleration = 5
@@ -44,8 +44,13 @@ local enemyRotationSpeed = 90
 
 local delayAfterGameOver = 2000
 
-local entities = {}
+entities = {
+	enemies = {},
+	bullets = {}
+}
+-- / GLOBALS
 
+-- UTILITIES
 function vectorFromAngle(angle)
 	return playdate.geometry.vector2D.new(math.cos(angle), math.sin(angle)):normalized()
 end
@@ -76,44 +81,13 @@ end
 
 function spawnEnemy()
 	local pos  = randomScreenEdgePoint()
-	print("new enemy at ", pos.x, pos.y)
 	table.insert(
-		entities,
+		entities.enemies,
 		Enemy(pos, (playerPosition - pos):normalized())
 	)
 	playdate.timer.performAfterDelay(enemySpawnCooldown, spawnEnemy)
 end
-
-function moveEnemies()
-	for i, enemy in ipairs(enemies) do
-		local moveVector = enemy.direction:scaledBy((deltaTime / 1000) * enemy.speed)
-		local newPos = enemies[i].pos + moveVector 
-		enemies[i].pos = newPos
-		enemies[i].rect.x = newPos.x
-		enemies[i].rect.y = newPos.y
-		if
-			(newPos.x > screenSize.x or newPos.x < 0) or
-			(newPos.y > screenSize.y or newPos.y < 0) then
-				enemies[i].direction = (playerPosition - newPos):normalized()
-				enemies[i].speed += enemyAcceleration
-				enemies[i].rect.height += enemyGrowSpeed
-				enemies[i].rect.width += enemyGrowSpeed
-		end
-		if ship:intersects(enemy.rect:toPolygon()) then
-			gameOver()
-		end
-	end
-end
-
-function drawEnemies()
-	for i, enemy in ipairs(enemies) do
-		gfx.setColor(gfx.kColorWhite)
-		gfx.fillRect(enemy.rect)
-		gfx.setColor(gfx.kColorBlack)
-		gfx.setLineWidth(2)
-		gfx.drawRect(enemy.rect)
-	end
-end
+-- / UTILITIES
 
 function drawShip(x, y, size)
 	local halfSize = size / 2
@@ -135,12 +109,6 @@ function drawShip(x, y, size)
 	gfx.setLineWidth(2)
 	gfx.setColor(gfx.kColorBlack)
 	gfx.fillPolygon(ship)
-end
-
-function startGame()
-	gameHasStarted = true
-	shoot()
-	spawnEnemy()
 end
 
 function updateInputs()
@@ -188,7 +156,7 @@ end
 
 function shoot()
 	table.insert(
-		entities,
+		entities.bullets,
 		Bullet(
 			playdate.geometry.vector2D.new(playerNosePos.x, playerNosePos.y),
 			(playerNosePos - playerPosition):normalized(),
@@ -198,28 +166,6 @@ function shoot()
 	)
 	local cooldown = playerIsMoving and playerShootCooldownWhenMoving or playerShootCooldown
 	playdate.timer.performAfterDelay(cooldown, shoot)
-end
-
-function moveBullets()
-	for i, bullet in ipairs(bullets) do
-		local moveVector = bullet.direction:normalized():scaledBy((deltaTime / 1000) * playerBulletSpeed)
-		bullets[i].pos += moveVector 
-		if (bullet.pos.x > screenSize.x or bullet.pos.x < 0) or (bullet.pos.y > screenSize.y or bullet.pos.y < 0) then
-			table.remove(bullets, i)
-		end 
-		for j, enemy in ipairs(enemies) do
-			if enemy.rect:containsPoint(playdate.geometry.point.new(bullet.pos:unpack())) then
-				local newEnemyWidth = enemy.rect.width - enemyHitShrink
-				if newEnemyWidth < enemyMinSize then
-					table.remove(enemies, j)
-				else
-					enemies[j].rect.width = newEnemyWidth
-					enemies[j].rect.height = newEnemyWidth
-				end
-				table.remove(bullets, i)
-			end
-		end
-	end
 end
 
 function drawBullets()
@@ -243,6 +189,12 @@ function init()
 	gameActive = true
 end
 
+function startGame()
+	gameHasStarted = true
+	shoot()
+	spawnEnemy()
+end
+
 function gameOver()
 	gameActive = false
 	gfx.clear()
@@ -255,16 +207,18 @@ function playdate.update(arg, ...)
 		gfx.clear()
 		deltaTime = playdate.getCurrentTimeMilliseconds() - lastFrameTime
 		updateInputs()
-		for i, e in ipairs(entities) do
-			e:onUpdate()
-			e:draw()
+		-- update and draw entities
+		for groupName, group in pairs(entities) do
+			for i, entity in ipairs(group) do
+				entity:onUpdate()
+				entity:draw()
+				if not entity.active then
+					table.remove(group, i)
+				end
+			end
 		end
 		moveShip()
 		drawShip(playerPosition.x, playerPosition.y, 20)
-		-- moveBullets()
-		-- drawBullets()
-		-- drawEnemies()
-		-- moveEnemies()
 		lastFrameTime = playdate.getCurrentTimeMilliseconds()
 	end
 end
