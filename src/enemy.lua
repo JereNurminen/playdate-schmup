@@ -17,6 +17,7 @@ function Enemy:init(pos, dir)
 	self.dir = dir
 	self.rect = playdate.geometry.rect.new(pos.x - enemySize / 2, pos.y - enemySize / 2, enemySize, enemySize)
 	self.speed = enemyBaseMoveSpeed
+	self.active = true
 end
 
 function Enemy:move()
@@ -33,6 +34,26 @@ function Enemy:draw()
 	gfx.drawRect(self.rect)
 end
 
+function Enemy:kill()
+	self.active = false
+end
+
+function Enemy:onHit()
+	self:kill()
+end
+
+function Enemy:checkOutOfBounds()
+	if self.pos.x < -unspawnMargin
+	or self.pos.x > screenSize.x + unspawnMargin 
+	or self.pos.y < -unspawnMargin
+	or self.pos.y > screenSize.y + unspawnMargin then
+		self:kill()
+	end
+end
+
 function Enemy:onUpdate()
-	self:move()
+	if self.active then
+		self:move()
+		self:checkOutOfBounds()
+	end
 end
