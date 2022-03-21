@@ -8,6 +8,7 @@ import("CoreLibs/ui")
 import("moving-entity")
 import("enemy")
 import("bullet")
+import("enemy-bullet")
 import("player")
 import("wave-manager")
 
@@ -36,11 +37,7 @@ enemySpawnMargin = 10
 local delayAfterGameOver = 2000
 
 inputs = {}
-entities = {
-	wave = {},
-	bullets = {},
-	player = {}
-}
+entities = {}
 
 function updateInputs()
 	inputs.up = playdate.buttonIsPressed(playdate.kButtonUp)
@@ -60,7 +57,8 @@ function init()
 	entities = {
 		wave = WaveManager(),
 		bullets = {},
-		player = Player(screenCenter)
+		player = Player(screenCenter),
+		enemyBullets = {}
 	}
 end
 
@@ -85,6 +83,13 @@ function playdate.update(arg, ...)
 	for i, bullet in ipairs(entities.bullets) do
 		if not bullet.active then
 			table.remove(entities.bullets, i)
+		end
+		bullet:onUpdate()
+		bullet:draw()
+	end
+	for i, bullet in ipairs(entities.enemyBullets) do
+		if not bullet.active then
+			table.remove(entities.enemyBullets, i)
 		end
 		bullet:onUpdate()
 		bullet:draw()

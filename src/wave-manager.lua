@@ -42,7 +42,11 @@ local wave4 = {
 	}
 }
 
-local debugWave = wave4
+local debugWave = nil
+
+local enemyShootFrequency = 500
+local enemyBulletSpeed = 80
+local enemyBulletWidth = 6
 
 function getRandomWave()
 	local waves = { wave1, wave2, wave3 }
@@ -55,6 +59,7 @@ function WaveManager:init()
 	WaveManager.super.init(self)
 	self.active = false
 	self.enemies = {}
+	self.shootCooldown = enemyShootFrequency
 end
 
 function WaveManager:spawnRandomWave()
@@ -101,6 +106,22 @@ function WaveManager:onUpdate()
 				if #self.enemies == 0 then
 					self:spawnRandomWave()
 				end
+			end
+		end
+		self.shootCooldown -= deltaTime
+		if self.shootCooldown < 0 then
+			self.shootCooldown = enemyShootFrequency
+			local shootingEnemy = self.enemies[#self.enemies]
+			if shootingEnemy then
+				table.insert(
+					entities.enemyBullets,
+					EnemyBullet(
+						shootingEnemy.enemy.pos,
+						(entities.player.pos - shootingEnemy.enemy.pos):normalized(),
+						enemyBulletSpeed,
+						enemyBulletWidth
+					)
+				)
 			end
 		end
 	end
