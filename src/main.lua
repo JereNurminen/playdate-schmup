@@ -1,3 +1,6 @@
+gfx = playdate.graphics
+geo = playdate.geometry
+
 import("CoreLibs/object")
 import("CoreLibs/timer")
 import("CoreLibs/ui")
@@ -6,15 +9,18 @@ import("moving-entity")
 import("enemy")
 import("bullet")
 import("player")
+import("wave-manager")
 
 import("utils")
+import("wave-manager")
 
 -- GLOBALS
 deltaTime = 0
-gfx = playdate.graphics
 
 screenSize = playdate.geometry.vector2D.new(400, 240)
-local screenCenter <const> = playdate.geometry.point.new((screenSize / 2):unpack())
+local screenCenter <const> = playdate.geometry.point.new(
+	(screenSize / 2):unpack()
+)
 unspawnMargin = 20
 
 gameHasStarted = false
@@ -22,7 +28,7 @@ gameActive = false
 
 local lastFrameTime = 0
 
-local enemySpawnCooldown = 1500
+local enemySpawnCooldown = 5000
 local enemyBaseMoveSpeed = 60
 local enemySize = 16
 enemySpawnMargin = 10
@@ -31,19 +37,10 @@ local delayAfterGameOver = 2000
 
 inputs = {}
 entities = {
-	enemies = {},
+	wave = {},
 	bullets = {},
-	player = { Player(screenCenter) }
+	player = {}
 }
-
-function spawnEnemy()
-	local pos  = randomScreenEdgePoint()
-	table.insert(
-		entities.enemies,
-		Enemy(pos, (entities.player[1].pos - pos):normalized(), enemyBaseMoveSpeed, enemySize)
-	)
-	playdate.timer.performAfterDelay(enemySpawnCooldown, spawnEnemy)
-end
 
 function updateInputs()
 	inputs.up = playdate.buttonIsPressed(playdate.kButtonUp)
@@ -61,16 +58,16 @@ function init()
 	gameHasStarted = false
 	gameActive = true
 	entities = {
-		enemies = {},
+		wave = WaveManager(),
 		bullets = {},
-		player = { Player(screenCenter) }
+		player = Player(screenCenter)
 	}
 end
 
 function startGame()
 	print("game start")
 	gameHasStarted = true
-	playdate.timer.performAfterDelay(enemySpawnCooldown, spawnEnemy)
+	entities.wave:activate()
 end
 
 function gameOver()
@@ -85,15 +82,18 @@ function playdate.update(arg, ...)
 	gfx.clear()
 	deltaTime = playdate.getCurrentTimeMilliseconds() - lastFrameTime
 	-- update and draw entities
-	for groupName, group in pairs(entities) do
-		for i, entity in ipairs(group) do
-			if not entity.active then
-				table.remove(group, i)
-			end
-			entity:onUpdate()
-			entity:draw()
+	for i, bullet in ipairs(entities.bullets) do
+		if not bullet.active then
+			table.remove(entities.bullets, i)
 		end
+		bullet:onUpdate()
+		bullet:draw()
 	end
+	entities.player:onUpdate()
+	entities.player:draw()
+	entities.wave:onUpdate()
+	entities.wave:draw()
+	
 	lastFrameTime = playdate.getCurrentTimeMilliseconds()
 end
 

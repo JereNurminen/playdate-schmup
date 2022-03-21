@@ -12,10 +12,10 @@ function Bullet:draw()
 end
 
 function Bullet:checkCollisions()
-	for i, enemy in ipairs(entities.enemies) do
-		if enemy.rect:containsPoint(self.pos:unpack()) then
+	for i, e in ipairs(entities.wave.enemies) do
+		if e.enemy.rect:containsPoint(self.pos:unpack()) then
 			self:kill()
-			enemy:onHit()
+			e.enemy:onHit()
 		end
 	end
 end

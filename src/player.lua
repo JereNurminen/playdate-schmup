@@ -109,8 +109,8 @@ function Player:die()
 end
 
 function Player:checkCollisions()
-	for i, enemy in ipairs(entities.enemies) do
-		if self.ship:intersects(enemy.rect:toPolygon()) then
+	for i, e in ipairs(entities.wave.enemies) do
+		if self.ship:intersects(e.enemy.rect:toPolygon()) then
 			self:die()
 		end
 	end
@@ -119,7 +119,7 @@ end
 function Player:onUpdate()
 	if gameActive then
 		self:move()
-		self:checkCollisions()
+		if gameHasStarted then self:checkCollisions() end
 		if gameHasStarted and self.cooldownTimer < 0 then
 			self:shoot()
 			self.cooldownTimer = shootCooldown
