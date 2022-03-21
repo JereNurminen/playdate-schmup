@@ -1,4 +1,4 @@
-wave1 = {
+local wave1 = {
 	direction = {0, 1},
 	enemies = {
 		{ pos = { 20, 0 } },
@@ -8,7 +8,7 @@ wave1 = {
 	}
 }
 
-wave2 = {
+local wave2 = {
 	direction = {-0.5, 0.5},
 	enemies = {
 		{ pos = { 380, -10 } },
@@ -20,7 +20,7 @@ wave2 = {
 	}
 }
 
-wave3 = {
+local wave3 = {
 	direction = {0, 1},
 	enemies = {
 		{ pos = { 180, 0 }, delay = 500 },
@@ -32,9 +32,21 @@ wave3 = {
 	}
 }
 
+local wave4 = {
+	direction = {0, 1},
+	enemies = {
+		{ pos = { 180, 0 } },
+		{ pos = { 200, 240 }, direction = {0, -1} },
+		{ pos = { 220, 0 } },
+		{ pos = { 240, 240 }, direction = {0, -1}  },
+	}
+}
+
+local debugWave = wave4
+
 function getRandomWave()
 	local waves = { wave1, wave2, wave3 }
-	return waves[math.random(#waves)]
+	return debugWave or waves[math.random(#waves)]
 end
 
 class("WaveManager").extends()
@@ -57,7 +69,7 @@ function WaveManager:spawnRandomWave()
 					{
 						enemy = Enemy(
 							geo.point.new(table.unpack(enemy.pos)),
-							geo.vector2D.new(table.unpack(newWave.direction))
+							geo.vector2D.new(table.unpack((enemy.direction or newWave.direction)))
 						),
 						delay = enemy.delay
 					}
